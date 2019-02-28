@@ -1,38 +1,52 @@
+/** prototype functions **/
+String.prototype.supplant = function (o) {
+    return this.replace(/{([^{}]*)}/g,
+        function (a, b) {
+            var r = o[b];
+            return typeof r === 'string' || typeof r === 'number' ? r : a;
+        }
+    );
+};
+String.prototype.replaceAll = function(search, replacement) {
+    var target = this;
+    return target.replace(new RegExp(search, 'g'), replacement);
+};
+
+/** properties **/
 var scriptProperties = PropertiesService.getScriptProperties();
 
+/** constants **/
 var TODOIST_API_KEY = scriptProperties.getProperty('todoist_token');
 var TODOIST_API = {
     tasks: "https://beta.todoist.com/API/v8/tasks",
     projects: "https://beta.todoist.com/API/v8/projects"
-};
+}
 
 var TODOIST_LABEL = "todoist";
-var PAGE_SIZE = 50;
-var GMAIL_QUERY = "is:starred !label:todoist";
+var GMAIL_QUERY = "is:starred !label:{label}".supplant({label: TODOIST_LABEL});
 
+/** methods **/
+var replaceIllegalerChars = function (str) {
+    return str.replaceAll('\n', ' ');
+}
+
+var buildTodoistMessage = function (thread) {
+    return "[@Mail {subject}]({link}) from {from}".supplant({
+        subject: replaceIllegalerChars(thread.getFirstMessageSubject()),
+        link: thread.getPermalink(),
+        from: getFrom(thread)
+    });
+}
 
 var getGmailThreads = function (query) {
-    var threads = [];
-    var start = 0;
-    do {
-        var max = start + PAGE_SIZE;
-        GmailApp.search(query, start, max).forEach(function (thread) {
-            threads.push(thread);
-        });
-        start += PAGE_SIZE;
-    } while (threads.length >= PAGE_SIZE)
-    return threads;
+    return GmailApp.search(query);
 };
 
 var gmailThreadToTodoist = function (thread) {
     Logger.log("Adding thread subject: '%s' to todoist", thread.getFirstMessageSubject());
 
-    createTodoistTaskFromGmailThread(thread);
-};
-
-var createTodoistTaskFromGmailThread = function (thread) {
     var data = {
-        "content": "@Mail [" + thread.getFirstMessageSubject() + "](" + thread.getPermalink() + ") email from " + getFrom(thread)
+        "content": buildTodoistMessage(thread)
     };
 
     var options = {
@@ -63,6 +77,7 @@ var getFrom = function (thread) {
     return thread.getMessages()[0].getFrom()
 }
 
+/** main **/
 function runGmailToTodoist() {
     var threads = getGmailThreads(GMAIL_QUERY);
     threads.forEach(gmailThreadToTodoist);
