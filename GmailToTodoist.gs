@@ -30,7 +30,7 @@ var replaceIllegalerChars = function (str) {
     return str.replaceAll('\n', ' ');
 }
 
-var buildTodoistMessage = function (thread) {
+var buildGmailTodoistMessage = function (thread) {
     return "[@Mail {subject}]({link}) from {from}".supplant({
         subject: replaceIllegalerChars(thread.getFirstMessageSubject()),
         link: thread.getPermalink(),
@@ -46,7 +46,7 @@ var gmailThreadToTodoist = function (thread) {
     Logger.log("Adding thread subject: '%s' to todoist", thread.getFirstMessageSubject());
 
     var data = {
-        "content": buildTodoistMessage(thread)
+        "content": buildGmailTodoistMessage(thread)
     };
 
     var options = {

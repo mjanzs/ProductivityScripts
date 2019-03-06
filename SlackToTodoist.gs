@@ -177,7 +177,7 @@ var messageToTodoist = function (item) {
     createTodoistTask(item, item.unstar);
 }
 
-var buildTodoistMessage = function (message) {
+var buildSlackTodoistMessage = function (message) {
     return "[@Slack {text}]({link}) from {from}".supplant({
         text: formatText(message.text),
         link: message.permalink,
@@ -188,7 +188,7 @@ var buildTodoistMessage = function (message) {
 var createTodoistTask = function (message, successCallback) {
     Logger.log("Creating task for meesage '%s'.", message);
     var data = {
-        "content": buildTodoistMessage(message)
+        "content": buildSlackTodoistMessage(message)
     };
 
     var options = {
